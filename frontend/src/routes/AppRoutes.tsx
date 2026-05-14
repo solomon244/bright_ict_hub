@@ -19,6 +19,7 @@ import StudentProgressPage from '../pages/student/StudentProgressPage';
 import StudentQuizzesPage from '../pages/student/StudentQuizzesPage';
 import StudentProfilePage from '../pages/student/StudentProfilePage';
 import StudentLessonPage from '../pages/student/StudentLessonPage';
+import StudentTutorPage from '../pages/student/StudentTutorPage';
 import InstructorOverviewPage from '../pages/instructor/InstructorOverviewPage';
 import InstructorCoursesPage from '../pages/instructor/InstructorCoursesPage';
 import InstructorCreateCoursePage from '../pages/instructor/InstructorCreateCoursePage';
@@ -59,7 +60,7 @@ const AppRoutes = () => (
       <Route
         path="/student"
         element={
-          <DashboardLayout title="Student Overview" subtitle="Track learning milestones and next steps">
+          <DashboardLayout title="Your HQ" subtitle="Resume lessons, track XP, and get a daily coach tip from Solomon">
             <StudentOverviewPage />
           </DashboardLayout>
         }
@@ -75,7 +76,7 @@ const AppRoutes = () => (
       <Route
         path="/student/progress"
         element={
-          <DashboardLayout title="Progress" subtitle="Detailed performance insights">
+          <DashboardLayout title="Progress lab" subtitle="Time invested and completion across every course">
             <StudentProgressPage />
           </DashboardLayout>
         }
@@ -93,6 +94,14 @@ const AppRoutes = () => (
         element={
           <DashboardLayout title="Profile settings" subtitle="Update contact information and interests">
             <StudentProfilePage />
+          </DashboardLayout>
+        }
+      />
+      <Route
+        path="/student/tutor"
+        element={
+          <DashboardLayout title="Solomon · AI tutor" subtitle="ሰለሞን — programming & digital skills in Amharic">
+            <StudentTutorPage />
           </DashboardLayout>
         }
       />

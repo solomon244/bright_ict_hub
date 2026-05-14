@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FaBook, FaChartPie, FaCog, FaGraduationCap, FaPenFancy, FaUserFriends } from 'react-icons/fa';
+import { FaBook, FaChartPie, FaCog, FaComments, FaGraduationCap, FaPenFancy, FaUserFriends } from 'react-icons/fa';
 import useAuth from '../../hooks/useAuth';
 import type { UserRole } from '../../types';
 import clsx from 'clsx';
@@ -11,6 +11,7 @@ const navConfig: Record<
   student: [
     { label: 'Overview', icon: <FaChartPie />, path: '/student' },
     { label: 'My Courses', icon: <FaBook />, path: '/student/courses' },
+    { label: 'Solomon · AI', icon: <FaComments />, path: '/student/tutor' },
     { label: 'Progress', icon: <FaGraduationCap />, path: '/student/progress' },
     { label: 'Quizzes', icon: <FaPenFancy />, path: '/student/quizzes' },
     { label: 'Profile', icon: <FaCog />, path: '/student/profile' },

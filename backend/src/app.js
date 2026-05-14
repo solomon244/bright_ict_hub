@@ -11,6 +11,10 @@ const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+if (env.nodeEnv === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // CORS configuration - allow both local development and production origins
 // Supports comma-separated CLIENT_URL values for multiple frontends.
 const allowedOrigins = (env.clientUrl || '')
@@ -47,11 +51,17 @@ app.use(cookieParser());
 
 app.use('/uploads', express.static(path.resolve(env.uploadDir)));
 
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: ' Bright ICT Hub API Documentation',
-}));
+// Swagger (disabled in production unless ENABLE_API_DOCS=true — see config/env.js)
+if (env.enableApiDocs) {
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: ' Bright ICT Hub API Documentation',
+    })
+  );
+}
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -61,13 +71,14 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
-      docs: '/api-docs',
-      swagger: '/api-docs',
+      ...(env.enableApiDocs ? { docs: '/api-docs', swagger: '/api-docs' } : {}),
     },
-    documentation: {
-      swagger: `${req.protocol}://${req.get('host')}/api-docs`,
-      description: 'Interactive API documentation with Swagger UI',
-    },
+    documentation: env.enableApiDocs
+      ? {
+          swagger: `${req.protocol}://${req.get('host')}/api-docs`,
+          description: 'Interactive API documentation with Swagger UI',
+        }
+      : { description: 'API docs disabled in this environment (set ENABLE_API_DOCS=true to enable).' },
   });
 });
 

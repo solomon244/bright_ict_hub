@@ -23,6 +23,14 @@ const env = {
   uploadDir: process.env.UPLOAD_DIR || path.join(rootDir, 'uploads'),
   resetTokenExpiryMinutes: Number(process.env.RESET_TOKEN_EXPIRY_MINUTES) || 30,
   verifyTokenExpiryMinutes: Number(process.env.VERIFY_TOKEN_EXPIRY_MINUTES) || 60,
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  /**
+   * Swagger UI: off in production by default; set ENABLE_API_DOCS=true to expose.
+   */
+  enableApiDocs:
+    process.env.ENABLE_API_DOCS === 'true' ||
+    (process.env.ENABLE_API_DOCS !== 'false' && (process.env.NODE_ENV || 'development') !== 'production'),
 };
 
 // Production environment validation
@@ -45,6 +53,12 @@ if (env.nodeEnv === 'production') {
     errors.push('⚠️  WARNING: CLIENT_URL is still set to localhost. Update for production!');
   }
 
+  if (!env.geminiApiKey || env.geminiApiKey.trim() === '') {
+    errors.push(
+      '⚠️  WARNING: GEMINI_API_KEY is not set — AI tutor and dashboard coach will stay offline until configured.'
+    );
+  }
+
   if (errors.length > 0) {
     console.error('\n🚨 PRODUCTION ENVIRONMENT VALIDATION FAILED:\n');
     errors.forEach((error) => console.error(`  ${error}`));
@@ -62,6 +76,9 @@ if (env.nodeEnv === 'development') {
   }
   if (!env.mongoUri || env.mongoUri.trim() === '') {
     console.warn('⚠️  Warning: MONGO_URI not set in environment variables');
+  }
+  if (!env.geminiApiKey || env.geminiApiKey.trim() === '') {
+    console.warn('⚠️  Warning: GEMINI_API_KEY not set — tutor and dashboard AI coach will return fallback states.');
   }
 }
 
