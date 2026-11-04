@@ -3,8 +3,8 @@ import apiClient from './apiClient';
 export type DashboardAiPayload = {
   insights: string | null;
   fallback: boolean;
-  /** gemini = LLM text; static = rule-based from your snapshot; none = server error */
-  source?: 'gemini' | 'static' | 'none';
+  /** ai = LLM text (any provider); static = rule-based from your snapshot; none = server error */
+  source?: 'ai' | 'gemini' | 'static' | 'none';
   generatedAt?: string;
 };
 

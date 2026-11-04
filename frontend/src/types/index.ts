@@ -136,7 +136,8 @@ export interface Quiz {
   questions: Array<{
     prompt: string;
     options: string[];
-    correctAnswerIndex: number;
+    // Only present for the course's instructor/admin; students never receive the answer key.
+    correctAnswerIndex?: number;
     explanation?: string;
   }>;
   createdAt?: string;

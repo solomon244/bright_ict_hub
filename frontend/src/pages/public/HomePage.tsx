@@ -124,9 +124,9 @@ const HomePage = () => {
         <div className="grid gap-8 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-3 rounded-2xl border border-primary/15 bg-white px-4 py-3 shadow-sm">
-              <img src="/bright-logo.png" alt="Bright ICT Hub logo" className="h-10 w-auto object-contain" />
+              <img src="/ethio-tech-hub-logo.png" alt="Ethio Tech Hub logo" className="h-10 w-auto object-contain" />
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Bright ICT Hub</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Ethio Tech Hub</p>
                 <p className="text-xs text-stone-500">AI, coding, and digital skills for Ethiopian students</p>
               </div>
             </div>
@@ -192,8 +192,8 @@ const HomePage = () => {
           <Card className="space-y-5 overflow-hidden bg-gradient-to-br from-primary/15 via-white to-secondary/10 animate-show-delay-1">
             <div className="relative overflow-hidden rounded-2xl border border-primary/10 bg-white p-6">
               <img
-                src="/bright-logo.png"
-                alt="Bright ICT Hub logo"
+                src="/ethio-tech-hub-logo.png"
+                alt="Ethio Tech Hub logo"
                 className="mx-auto h-72 w-auto object-contain smooth-transition hover:scale-105"
               />
               <div className="absolute bottom-4 left-4">
@@ -250,7 +250,7 @@ const HomePage = () => {
 
       <section className="mx-auto max-w-6xl px-4 animate-show-delay-2">
         <div className="mb-8 text-center">
-          <h2 className="section-heading">Why students choose Bright ICT Hub</h2>
+          <h2 className="section-heading">Why students choose Ethio Tech Hub</h2>
           <p className="section-subheading mx-auto max-w-2xl">
             Built for Ethiopian students with localized examples, AI support, and offline-friendly access.
           </p>

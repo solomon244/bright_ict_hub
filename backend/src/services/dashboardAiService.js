@@ -1,8 +1,30 @@
 const Enrollment = require('../models/Enrollment');
 const Progress = require('../models/Progress');
-const env = require('../config/env');
 const ApiResponse = require('../utils/apiResponse');
-const { generateGeminiText } = require('./tutorGeminiService');
+const ai = require('./ai');
+
+// The coach card is shown on every dashboard visit. Without a cache each visit would spend one of the
+// student's daily AI requests (shared with the tutor), so a generated card is reused for a few hours.
+const COACH_TTL_MS = Number(process.env.COACH_CACHE_TTL_MS) || 6 * 60 * 60 * 1000;
+const COACH_CACHE_MAX = 5000;
+const coachCache = new Map(); // studentId -> { at, text }
+
+const readCoachCache = (studentId) => {
+  const hit = coachCache.get(String(studentId));
+  if (!hit) return null;
+  if (Date.now() - hit.at > COACH_TTL_MS) {
+    coachCache.delete(String(studentId));
+    return null;
+  }
+  return hit;
+};
+
+const writeCoachCache = (studentId, text) => {
+  if (coachCache.size >= COACH_CACHE_MAX) coachCache.delete(coachCache.keys().next().value); // oldest first
+  coachCache.set(String(studentId), { at: Date.now(), text });
+};
+
+const clearCoachCache = () => coachCache.clear();
 
 /**
  * Build a compact, non-PII snapshot for the LLM (titles + counts only).
@@ -76,7 +98,7 @@ function buildStaticCoachInsights(snapshot) {
 
   if (!list.length) {
     return [
-      'ሰላም! ዛሬ በ Bright ICT Hub ላይ ጉዞዎን ለመጀመር ጥሩ ቀን ነው።',
+      'ሰላም! ዛሬ በ Ethio Tech Hub ላይ ጉዞዎን ለመጀመር ጥሩ ቀን ነው።',
       '• ከካታሎግ ኮርስ ይምረጡ እና enrollment ያድርጉ — ከአንድ ትምህርት በኋላ እንበረታለሁ።',
       '• ኮድ እና ድር ቃላትን በ English እንዲሁም ትርጉምን በአማርኛ ይማሩ።',
       '• በየቀኑ 20–30 ደቂቃ ብቻ ቢሆንም ተመሳሳይ ሰዓት መያዝ እድገትን ያፋጥናል።',
@@ -108,10 +130,21 @@ function buildStaticCoachInsights(snapshot) {
   const pacing =
     '• በየቀኑ ተመሳሳይ ሰዓት መማር (የ20 ደቂቃ rule) ከስህተት በኋላ መመለስን ቀላል ያደርገዋል።';
 
-  return ['ሰላም! ዛሬም በ Bright ICT Hub ላይ እንቀጥል።', encouragement, nextStep, pacing].join('\n');
+  return ['ሰላም! ዛሬም በ Ethio Tech Hub ላይ እንቀጥል።', encouragement, nextStep, pacing].join('\n');
 }
 
 exports.getDashboardInsights = async (studentId) => {
+  const cached = readCoachCache(studentId);
+  if (cached) {
+    return new ApiResponse(200, 'OK', {
+      generatedAt: new Date(cached.at).toISOString(),
+      insights: cached.text,
+      fallback: false,
+      source: 'ai',
+      cached: true,
+    });
+  }
+
   let snapshot;
   try {
     snapshot = await buildLearningSnapshot(studentId);
@@ -129,7 +162,7 @@ exports.getDashboardInsights = async (studentId) => {
     generatedAt: new Date().toISOString(),
   };
 
-  if (!env.geminiApiKey) {
+  if (!ai.isConfigured()) {
     return new ApiResponse(200, 'OK', {
       ...payloadBase,
       insights: staticInsights,
@@ -138,7 +171,7 @@ exports.getDashboardInsights = async (studentId) => {
     });
   }
 
-  const prompt = `You are ሰለሞን (Solomon), a warm AI learning coach on Bright ICT Hub — an Ethiopian platform for grades 9–12 (programming, web, digital skills).
+  const prompt = `You are ሰለሞን (Solomon), a warm AI learning coach on Ethio Tech Hub — an Ethiopian platform for grades 9–12 (programming, web, digital skills).
 
 Student snapshot (JSON only, no names):
 ${JSON.stringify(snapshot)}
@@ -153,7 +186,13 @@ Rules:
 
   let text;
   try {
-    text = await generateGeminiText(prompt, { temperature: 0.55, maxOutputTokens: 400 });
+    ({ text } = await ai.generateText({
+      feature: 'dashboard_coach',
+      userId: studentId,
+      prompt,
+      temperature: 0.55,
+      maxTokens: 400,
+    }));
   } catch {
     return new ApiResponse(200, 'OK', {
       ...payloadBase,
@@ -172,10 +211,14 @@ Rules:
     });
   }
 
+  writeCoachCache(studentId, text);
   return new ApiResponse(200, 'OK', {
     ...payloadBase,
     insights: text,
     fallback: false,
-    source: 'gemini',
+    source: 'ai',
+    cached: false,
   });
 };
+
+exports.clearCoachCache = clearCoachCache;

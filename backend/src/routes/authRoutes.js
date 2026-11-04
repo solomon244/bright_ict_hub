@@ -2,6 +2,7 @@ const express = require('express');
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/authMiddleware');
 const validateRequest = require('../middleware/validateRequest');
+const { loginLimiter, registerLimiter, emailActionLimiter } = require('../middleware/rateLimiters');
 const {
   registerValidator,
   loginValidator,
@@ -65,7 +66,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/register', registerValidator, validateRequest, authController.register);
+router.post('/register', registerLimiter, registerValidator, validateRequest, authController.register);
 
 /**
  * @swagger
@@ -124,7 +125,7 @@ router.post('/register', registerValidator, validateRequest, authController.regi
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', loginValidator, validateRequest, authController.login);
+router.post('/login', loginLimiter, loginValidator, validateRequest, authController.login);
 
 /**
  * @swagger
@@ -231,6 +232,7 @@ router.post('/logout', refreshValidator, validateRequest, authController.logout)
  */
 router.post(
   '/forgot-password',
+  emailActionLimiter,
   passwordResetRequestValidator,
   validateRequest,
   authController.requestPasswordReset
@@ -274,7 +276,7 @@ router.post(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/reset-password', passwordResetValidator, validateRequest, authController.resetPassword);
+router.post('/reset-password', emailActionLimiter, passwordResetValidator, validateRequest, authController.resetPassword);
 
 /**
  * @swagger
@@ -292,7 +294,7 @@ router.post('/reset-password', passwordResetValidator, validateRequest, authCont
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.post('/verify-email/request', authenticate, authController.requestEmailVerification);
+router.post('/verify-email/request', emailActionLimiter, authenticate, authController.requestEmailVerification);
 
 /**
  * @swagger

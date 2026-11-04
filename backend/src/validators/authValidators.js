@@ -1,24 +1,26 @@
 const { body } = require('express-validator');
-const { USER_ROLES } = require('../constants/roles');
+const { SELF_REGISTER_ROLES } = require('../constants/roles');
 
 const registerValidator = [
-  body('firstName').trim().notEmpty().withMessage('First name is required'),
-  body('lastName').trim().notEmpty().withMessage('Last name is required'),
-  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('firstName').isString().trim().notEmpty().isLength({ max: 60 }).withMessage('First name is required (max 60 characters)'),
+  body('lastName').isString().trim().notEmpty().isLength({ max: 60 }).withMessage('Last name is required (max 60 characters)'),
+  body('email').isString().isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters')
+    .isString()
+    .isLength({ min: 8, max: 72 }) // bcrypt only uses the first 72 bytes
+    .withMessage('Password must be 8-72 characters')
     .matches(/\d/)
     .withMessage('Password must include a number'),
+  // Admin accounts are never created through public sign-up.
   body('role')
     .optional()
-    .isIn(Object.values(USER_ROLES))
+    .isIn(SELF_REGISTER_ROLES)
     .withMessage('Invalid role selection'),
 ];
 
 const loginValidator = [
-  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
-  body('password').notEmpty().withMessage('Password is required'),
+  body('email').isString().isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('password').isString().notEmpty().withMessage('Password is required'),
 ];
 
 const refreshValidator = [body('refreshToken').notEmpty().withMessage('Refresh token is required')];
@@ -27,7 +29,7 @@ const passwordResetRequestValidator = [body('email').isEmail().withMessage('Vali
 
 const passwordResetValidator = [
   body('token').notEmpty().withMessage('Reset token is required'),
-  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  body('newPassword').isString().isLength({ min: 8, max: 72 }).withMessage('Password must be 8-72 characters'),
 ];
 
 const verifyEmailValidator = [body('token').notEmpty().withMessage('Verification token is required')];

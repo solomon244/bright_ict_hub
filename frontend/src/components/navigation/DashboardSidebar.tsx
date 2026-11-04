@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FaBook, FaChartPie, FaCog, FaComments, FaGraduationCap, FaPenFancy, FaUserFriends } from 'react-icons/fa';
+import { FaBook, FaChartLine, FaChartPie, FaCode, FaFlag, FaHandsHelping, FaCog, FaComments, FaGraduationCap, FaPenFancy, FaRoute, FaUserFriends } from 'react-icons/fa';
 import useAuth from '../../hooks/useAuth';
 import type { UserRole } from '../../types';
 import clsx from 'clsx';
@@ -11,7 +11,10 @@ const navConfig: Record<
   student: [
     { label: 'Overview', icon: <FaChartPie />, path: '/student' },
     { label: 'My Courses', icon: <FaBook />, path: '/student/courses' },
+    { label: 'Learning Paths', icon: <FaRoute />, path: '/student/paths' },
     { label: 'Solomon · AI', icon: <FaComments />, path: '/student/tutor' },
+    { label: 'Practice', icon: <FaCode />, path: '/student/practice' },
+    { label: 'Community', icon: <FaHandsHelping />, path: '/community' },
     { label: 'Progress', icon: <FaGraduationCap />, path: '/student/progress' },
     { label: 'Quizzes', icon: <FaPenFancy />, path: '/student/quizzes' },
     { label: 'Profile', icon: <FaCog />, path: '/student/profile' },
@@ -21,11 +24,15 @@ const navConfig: Record<
     { label: 'Manage Courses', icon: <FaBook />, path: '/instructor/courses' },
     { label: 'Create Course', icon: <FaPenFancy />, path: '/instructor/courses/new' },
     { label: 'Students', icon: <FaUserFriends />, path: '/instructor/students' },
+    { label: 'Community', icon: <FaHandsHelping />, path: '/community' },
     { label: 'Profile', icon: <FaCog />, path: '/instructor/profile' },
   ],
   admin: [
     { label: 'Overview', icon: <FaChartPie />, path: '/admin' },
     { label: 'Users', icon: <FaUserFriends />, path: '/admin/users' },
+    { label: 'Analytics', icon: <FaChartLine />, path: '/admin/analytics' },
+    { label: 'Moderation', icon: <FaFlag />, path: '/admin/moderation' },
+    { label: 'Community', icon: <FaHandsHelping />, path: '/community' },
     { label: 'Courses', icon: <FaBook />, path: '/admin/courses' },
     { label: 'Categories', icon: <FaPenFancy />, path: '/admin/categories' },
     { label: 'Settings', icon: <FaCog />, path: '/admin/settings' },

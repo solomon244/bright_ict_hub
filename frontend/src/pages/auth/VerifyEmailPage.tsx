@@ -40,7 +40,7 @@ const VerifyEmailPage = () => {
   return (
     <div className="space-y-6 text-center">
       <p className="text-xs font-semibold uppercase text-primary">Verify your inbox</p>
-      <h1 className="text-3xl font-display font-semibold">Confirm your  Bright ICT Hub email</h1>
+      <h1 className="text-3xl font-display font-semibold">Confirm your Ethio Tech Hub email</h1>
       <p className="text-sm text-stone-500">
         Enter the 6-digit code we sent to your email. This keeps your account secure.
       </p>

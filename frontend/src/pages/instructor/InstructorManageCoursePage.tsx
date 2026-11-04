@@ -4,6 +4,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import InputField from '../../components/common/InputField';
 import Badge from '../../components/common/Badge';
+import QuizBuilderPanel from '../../components/instructor/QuizBuilderPanel';
 import { fetchCourse, createLesson, updateLesson, deleteLesson, type CreateLessonPayload } from '../../services/courseService';
 import { useAuth } from '../../hooks/useAuth';
 import type { Course, Lesson } from '../../types';
@@ -14,6 +15,7 @@ const InstructorManageCoursePage = () => {
   const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -376,6 +378,13 @@ const InstructorManageCoursePage = () => {
                     <div className="flex gap-2">
                       <Button
                         variant="secondary"
+                        onClick={() => setQuizLessonId(quizLessonId === lessonId ? null : lessonId)}
+                        className="text-sm px-3 py-1"
+                      >
+                        {quizLessonId === lessonId ? 'Hide quiz' : 'Quiz'}
+                      </Button>
+                      <Button
+                        variant="secondary"
                         onClick={() => handleEdit(lesson)}
                         className="text-sm px-3 py-1"
                       >
@@ -390,6 +399,9 @@ const InstructorManageCoursePage = () => {
                       </Button>
                     </div>
                   </div>
+                  {quizLessonId === lessonId && (
+                    <QuizBuilderPanel lessonId={lessonId} lessonTitle={lesson.title} onClose={() => setQuizLessonId(null)} />
+                  )}
                 </Card>
               );
             })}

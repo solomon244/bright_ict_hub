@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import DashboardSidebar from '../components/navigation/DashboardSidebar';
 import Navbar from '../components/navigation/Navbar';
+import NotificationBell from '../components/common/NotificationBell';
 
 interface DashboardLayoutProps {
   title: string;
@@ -22,7 +23,10 @@ const DashboardLayout = ({ title, subtitle, actions, children }: DashboardLayout
                 <h1 className="text-2xl font-display font-semibold text-stone-900">{title}</h1>
                 {subtitle && <p className="text-sm text-stone-500">{subtitle}</p>}
               </div>
-              {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
+              <div className="flex flex-wrap items-center gap-3">
+                {actions}
+                <NotificationBell />
+              </div>
             </header>
             {children}
           </section>

@@ -78,7 +78,7 @@ const LoginPage = () => {
           {isSubmitting ? 'Signing in...' : 'Sign in'}
         </Button>
         <p className="text-center text-sm text-stone-500">
-          New to  Bright ICT Hub?{' '}
+          New to Ethio Tech Hub?{' '}
           <Link to="/register" className="font-semibold text-primary">
             Create an account
           </Link>

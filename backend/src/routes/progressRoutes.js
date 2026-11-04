@@ -2,6 +2,8 @@ const express = require('express');
 const progressController = require('../controllers/progressController');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const { USER_ROLES } = require('../constants/roles');
+const { body, param } = require('express-validator');
+const validateRequest = require('../middleware/validateRequest');
 
 const router = express.Router();
 
@@ -62,7 +64,16 @@ router.use(authenticate, authorize(USER_ROLES.STUDENT));
  *       401:
  *         description: Unauthorized
  */
-router.post('/', progressController.updateProgress);
+router.post(
+  '/',
+  [
+    body('lessonId').isMongoId().withMessage('lessonId is required'),
+    body('status').isIn(['not_started', 'in_progress', 'completed']).withMessage('invalid status'),
+    body('percentage').optional().isFloat({ min: 0, max: 100 }).toFloat(),
+  ],
+  validateRequest,
+  progressController.updateProgress
+);
 
 /**
  * @swagger
@@ -98,6 +109,6 @@ router.post('/', progressController.updateProgress);
  *       401:
  *         description: Unauthorized
  */
-router.get('/:courseId', progressController.getCourseProgress);
+router.get('/:courseId', [param('courseId').isMongoId()], validateRequest, progressController.getCourseProgress);
 
 module.exports = router;

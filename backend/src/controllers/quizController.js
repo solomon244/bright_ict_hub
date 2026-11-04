@@ -2,14 +2,14 @@ const asyncHandler = require('../utils/asyncHandler');
 const quizService = require('../services/quizService');
 
 exports.createQuiz = asyncHandler(async (req, res) => {
-  const response = await quizService.createQuiz(req.body);
+  const response = await quizService.createQuiz(req.body, req.user);
   res.status(response.statusCode).json(response);
 });
 
 exports.submitQuiz = asyncHandler(async (req, res) => {
   const response = await quizService.submitQuiz({
     quizId: req.params.quizId,
-    studentId: req.user.id,
+    student: req.user,
     answers: req.body.answers,
   });
   res.status(response.statusCode).json(response);
@@ -21,27 +21,27 @@ exports.quizHistory = asyncHandler(async (req, res) => {
 });
 
 exports.getQuizByLesson = asyncHandler(async (req, res) => {
-  const response = await quizService.getQuizByLesson(req.params.lessonId);
+  const response = await quizService.getQuizByLesson(req.params.lessonId, req.user);
   res.status(response.statusCode).json(response);
 });
 
 exports.getQuiz = asyncHandler(async (req, res) => {
-  const response = await quizService.getQuiz(req.params.quizId);
+  const response = await quizService.getQuiz(req.params.quizId, req.user);
   res.status(response.statusCode).json(response);
 });
 
 exports.updateQuiz = asyncHandler(async (req, res) => {
-  const response = await quizService.updateQuiz(req.params.quizId, req.body, req.user.id);
+  const response = await quizService.updateQuiz(req.params.quizId, req.body, req.user);
   res.status(response.statusCode).json(response);
 });
 
 exports.deleteQuiz = asyncHandler(async (req, res) => {
-  const response = await quizService.deleteQuiz(req.params.quizId, req.user.id);
+  const response = await quizService.deleteQuiz(req.params.quizId, req.user);
   res.status(response.statusCode).json(response);
 });
 
 exports.getQuizAttempts = asyncHandler(async (req, res) => {
-  const response = await quizService.getQuizAttempts(req.params.quizId, req.user.id);
+  const response = await quizService.getQuizAttempts(req.params.quizId, req.user);
   res.status(response.statusCode).json(response);
 });
 

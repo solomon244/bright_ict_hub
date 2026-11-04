@@ -1,6 +1,8 @@
 const express = require('express');
 const uploadController = require('../controllers/uploadController');
-const { authenticate } = require('../middleware/authMiddleware');
+const { authenticate, authorize } = require('../middleware/authMiddleware');
+const { uploadLimiter } = require('../middleware/rateLimiters');
+const { USER_ROLES } = require('../constants/roles');
 const {
   handleProfileImageUpload,
   handleThumbnailUpload,
@@ -11,7 +13,10 @@ const {
 const router = express.Router();
 
 // All upload routes require authentication
-router.use(authenticate);
+router.use(authenticate, uploadLimiter);
+
+// Only instructors and admins may publish course media; any signed-in user may set their own avatar.
+const contentCreators = authorize(USER_ROLES.INSTRUCTOR, USER_ROLES.ADMIN);
 
 /**
  * @swagger
@@ -88,7 +93,7 @@ router.post('/profile-image', handleProfileImageUpload, uploadController.uploadP
  *       401:
  *         description: Unauthorized
  */
-router.post('/thumbnail', handleThumbnailUpload, uploadController.uploadThumbnail);
+router.post('/thumbnail', contentCreators, handleThumbnailUpload, uploadController.uploadThumbnail);
 
 /**
  * @swagger
@@ -117,7 +122,7 @@ router.post('/thumbnail', handleThumbnailUpload, uploadController.uploadThumbnai
  *       401:
  *         description: Unauthorized
  */
-router.post('/video', handleVideoUpload, uploadController.uploadVideo);
+router.post('/video', contentCreators, handleVideoUpload, uploadController.uploadVideo);
 
 /**
  * @swagger
@@ -146,6 +151,6 @@ router.post('/video', handleVideoUpload, uploadController.uploadVideo);
  *       401:
  *         description: Unauthorized
  */
-router.post('/resource', handleResourceUpload, uploadController.uploadResource);
+router.post('/resource', contentCreators, handleResourceUpload, uploadController.uploadResource);
 
 module.exports = router;

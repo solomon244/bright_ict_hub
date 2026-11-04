@@ -6,10 +6,12 @@ const unwrap = <T>(response: { data: { data: T } }): T => response.data.data;
 export interface CreateQuizPayload {
   lesson: string;
   title: string;
+  durationMinutes?: number;
   questions: Array<{
-    question: string;
+    prompt: string; // the API field is `prompt` (was mistyped as `question`)
     options: string[];
     correctAnswerIndex: number;
+    explanation?: string;
   }>;
 }
 
@@ -59,3 +61,22 @@ export const fetchQuizAttempts = async (quizId: string): Promise<QuizAttempt[]> 
   return unwrap<{ attempts: QuizAttempt[] }>(response).attempts;
 };
 
+export interface QuizDraft {
+  lessonId: string;
+  title: string;
+  status: 'draft';
+  aiGenerated: true;
+  requiresReview: true;
+  questions: Array<{ prompt: string; options: string[]; correctAnswerIndex: number; explanation?: string }>;
+}
+
+/** AI-generated draft for instructors. Nothing is saved: review/edit, then publish with createQuiz(). */
+export const generateQuizDraft = async (payload: {
+  lessonId: string;
+  count?: number;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  language?: 'en' | 'am';
+}): Promise<QuizDraft> => {
+  const response = await apiClient.post('/ai/quiz-draft', payload);
+  return unwrap<{ draft: QuizDraft }>(response).draft;
+};

@@ -1,5 +1,6 @@
 const express = require('express');
 const adminController = require('../controllers/adminController');
+const aiController = require('../controllers/aiController');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const { USER_ROLES } = require('../constants/roles');
 
@@ -45,6 +46,21 @@ router.use(authenticate, authorize(USER_ROLES.ADMIN));
  *         description: Forbidden - Admin access required
  */
 router.get('/stats', adminController.dashboardStats);
+
+/** @swagger
+ * /api/admin/ai/usage:
+ *   get: { summary: "AI usage, cost estimate, errors and answer feedback (admin)", tags: [Admin], security: [{ bearerAuth: [] }], parameters: [{ in: query, name: days, schema: { type: integer, default: 30 } }], responses: { 200: { description: OK } } }
+ */
+router.get('/ai/usage', aiController.usageSummary);
+
+/** @swagger
+ * /api/admin/moderation:
+ *   get: { summary: "Reported or hidden posts awaiting review", tags: [Admin], security: [{ bearerAuth: [] }], responses: { 200: { description: OK } } }
+ * /api/admin/audit-logs:
+ *   get: { summary: "Audit trail of privileged actions", tags: [Admin], security: [{ bearerAuth: [] }], responses: { 200: { description: OK } } }
+ */
+router.get('/moderation', adminController.moderationQueue);
+router.get('/audit-logs', adminController.auditLogs);
 
 /**
  * @swagger

@@ -2,12 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const router = require('./routes');
 const env = require('./config/env');
 const logger = require('./utils/logger');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
+const { apiLimiter } = require('./middleware/rateLimiters');
 
 const app = express();
 
@@ -44,12 +47,32 @@ app.use(
     credentials: true,
   })
 );
+// Security headers. Swagger UI needs inline scripts/styles, so CSP is applied only when docs are off.
+// CORP is cross-origin because the frontend (another origin) embeds uploaded images and videos.
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: env.enableApiDocs ? false : undefined,
+  })
+);
 app.use(logger);
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
+// Strip `$`/`.` operator keys from user input to block NoSQL operator injection.
+app.use(mongoSanitize());
 
-app.use('/uploads', express.static(path.resolve(env.uploadDir)));
+// Uploaded files are user content: never let browsers sniff or execute them as pages.
+app.use(
+  '/uploads',
+  express.static(path.resolve(env.uploadDir), {
+    index: false,
+    dotfiles: 'deny',
+    setHeaders: (res) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    },
+  })
+);
 
 // Swagger (disabled in production unless ENABLE_API_DOCS=true — see config/env.js)
 if (env.enableApiDocs) {
@@ -58,7 +81,7 @@ if (env.enableApiDocs) {
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
       customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: ' Bright ICT Hub API Documentation',
+      customSiteTitle: 'Ethio Tech Hub API Documentation',
     })
   );
 }
@@ -67,7 +90,7 @@ if (env.enableApiDocs) {
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: ' Bright ICT Hub API',
+    message: 'Ethio Tech Hub API',
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
@@ -107,7 +130,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use('/api', router);
+app.use('/api', apiLimiter, router);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -4,7 +4,10 @@ import Card from '../../components/common/Card';
 import ProgressBar from '../../components/common/ProgressBar';
 import Button from '../../components/common/Button';
 import StatCard from '../../components/common/StatCard';
+import RecommendationsCard from '../../components/student/RecommendationsCard';
 import RingProgress from '../../components/student/RingProgress';
+import LeaderboardCard from '../../components/student/LeaderboardCard';
+import { fetchGamification, type GamificationStats } from '../../services/gamificationService';
 import { fetchDashboardAiInsights } from '../../services/dashboardAiService';
 import { fetchMyEnrollments } from '../../services/enrollmentService';
 import { fetchCourseProgress } from '../../services/progressService';
@@ -64,13 +67,14 @@ function continueLessonPath(courseId: string, progresses: Progress[]): string {
 
 const StudentOverviewPage = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [serverGame, setServerGame] = useState<GamificationStats | null>(null);
   const [progressMap, setProgressMap] = useState<Record<string, Progress[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiFallback, setAiFallback] = useState(false);
-  const [aiSource, setAiSource] = useState<'gemini' | 'static' | 'none' | null>(null);
+  const [aiSource, setAiSource] = useState<'ai' | 'gemini' | 'static' | 'none' | null>(null);
   const [aiGeneratedAt, setAiGeneratedAt] = useState<string | null>(null);
 
   const loadAiInsights = useCallback(async () => {
@@ -134,7 +138,26 @@ const StudentOverviewPage = () => {
   };
 
   const allProgressFlat = useMemo(() => Object.values(progressMap).flat(), [progressMap]);
-  const game = useMemo(() => summarizeGamification(allProgressFlat), [allProgressFlat]);
+  useEffect(() => {
+    fetchGamification()
+      .then(setServerGame)
+      .catch(() => setServerGame(null)); // fall back to the locally estimated numbers
+  }, []);
+
+  // XP, level, streak and badges come from the server (verified events only); the local estimate is a fallback.
+  const game = useMemo(() => {
+    const local = summarizeGamification(allProgressFlat);
+    if (!serverGame) return local;
+    return {
+      ...local,
+      xp: serverGame.xp,
+      level: serverGame.level,
+      xpIntoLevel: serverGame.xpIntoLevel,
+      xpForNextLevel: serverGame.xpForNextLevel,
+      levelProgressPercent: serverGame.levelProgressPercent,
+      badges: serverGame.badges.map((b) => ({ id: b.code, label: b.label, emoji: b.emoji, unlocked: b.unlocked })),
+    };
+  }, [allProgressFlat, serverGame]);
 
   const sortedForContinue = useMemo(() => {
     return [...enrollments].sort((a, b) => {
@@ -236,7 +259,7 @@ const StudentOverviewPage = () => {
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
                 <div className="flex flex-wrap items-center gap-2">
-                  {aiSource === 'gemini' ? (
+                  {aiSource === 'ai' || aiSource === 'gemini' ? (
                     <span className="rounded-full bg-violet-100 px-2 py-0.5 font-semibold text-violet-900">AI-generated</span>
                   ) : aiSource === 'static' ? (
                     <span className="rounded-full bg-sky-100 px-2 py-0.5 font-semibold text-sky-950">Progress-based</span>
@@ -317,6 +340,8 @@ const StudentOverviewPage = () => {
         </div>
       ) : (
         <>
+      <RecommendationsCard />
+
       {/* Gamification hero */}
       <Card className="relative overflow-hidden border-primary/10 bg-gradient-to-br from-white via-violet-50/40 to-cyan-50/30 p-6 md:p-8">
         <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
@@ -343,6 +368,12 @@ const StudentOverviewPage = () => {
                   {game.lessonsThisWeek} lesson{game.lessonsThisWeek === 1 ? '' : 's'} completed in the last 7 days.
                 </span>
               </p>
+              {serverGame && (
+                <p className="text-sm font-semibold text-stone-700">
+                  🔥 {serverGame.streak.current}-day streak
+                  <span className="font-normal text-stone-500"> · best {serverGame.streak.longest} · {serverGame.weeklyXp} XP this week</span>
+                </p>
+              )}
               <ProgressBar
                 label="Next level"
                 value={(game.xpIntoLevel / game.xpForNextLevel) * 100}
@@ -373,6 +404,13 @@ const StudentOverviewPage = () => {
           </div>
         </div>
       </Card>
+
+      {serverGame && (
+        <LeaderboardCard
+          optedIn={serverGame.leaderboardOptIn}
+          onOptInChange={(v) => setServerGame((g) => (g ? { ...g, leaderboardOptIn: v } : g))}
+        />
+      )}
 
       <section className="rounded-2xl border border-stone-100 bg-stone-50/60 p-4 sm:p-5" aria-labelledby="student-dash-glance">
         <h2 id="student-dash-glance" className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-400">
@@ -416,7 +454,8 @@ const StudentOverviewPage = () => {
               const courseId = course._id || course.id;
               if (!courseId) return null;
               const progresses = progressMap[courseId] || [];
-              const pct = calculateProgressPercent(courseId);
+              // Server-computed (completed lessons / ALL lessons); the local figure only counts lessons the student has touched.
+              const pct = typeof enrollment.progressPercentage === 'number' ? enrollment.progressPercentage : calculateProgressPercent(courseId);
               const totalLessons = course.totalLessons || progresses.length || 0;
               const done = progresses.filter((p) => p.status === 'completed').length;
               const invested = estimateCourseTimeInvested(course as Course, progresses);

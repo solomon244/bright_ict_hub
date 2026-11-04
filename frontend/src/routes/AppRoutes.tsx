@@ -20,6 +20,8 @@ import StudentQuizzesPage from '../pages/student/StudentQuizzesPage';
 import StudentProfilePage from '../pages/student/StudentProfilePage';
 import StudentLessonPage from '../pages/student/StudentLessonPage';
 import StudentTutorPage from '../pages/student/StudentTutorPage';
+import StudentPathsPage from '../pages/student/StudentPathsPage';
+import StudentPracticePage from '../pages/student/StudentPracticePage';
 import InstructorOverviewPage from '../pages/instructor/InstructorOverviewPage';
 import InstructorCoursesPage from '../pages/instructor/InstructorCoursesPage';
 import InstructorCreateCoursePage from '../pages/instructor/InstructorCreateCoursePage';
@@ -31,6 +33,10 @@ import AdminUsersPage from '../pages/admin/AdminUsersPage';
 import AdminCoursesPage from '../pages/admin/AdminCoursesPage';
 import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
+import AdminAnalyticsPage from '../pages/admin/AdminAnalyticsPage';
+import AdminModerationPage from '../pages/admin/AdminModerationPage';
+import CommunityPage from '../pages/community/CommunityPage';
+import ThreadPage from '../pages/community/ThreadPage';
 
 const AppRoutes = () => (
   <Routes>
@@ -78,6 +84,22 @@ const AppRoutes = () => (
         element={
           <DashboardLayout title="Progress lab" subtitle="Time invested and completion across every course">
             <StudentProgressPage />
+          </DashboardLayout>
+        }
+      />
+      <Route
+        path="/student/paths"
+        element={
+          <DashboardLayout title="Learning paths" subtitle="Follow a guided route from beginner to job-ready">
+            <StudentPathsPage />
+          </DashboardLayout>
+        }
+      />
+      <Route
+        path="/student/practice"
+        element={
+          <DashboardLayout title="Practice" subtitle="Code challenges and a safe playground">
+            <StudentPracticePage />
           </DashboardLayout>
         }
       />
@@ -158,12 +180,47 @@ const AppRoutes = () => (
       />
     </Route>
 
+    <Route element={<ProtectedRoute allowedRoles={['student', 'instructor', 'admin']} />}>
+      <Route
+        path="/community"
+        element={
+          <DashboardLayout title="Community" subtitle="Ask questions, help others, learn together">
+            <CommunityPage />
+          </DashboardLayout>
+        }
+      />
+      <Route
+        path="/community/:id"
+        element={
+          <DashboardLayout title="Discussion">
+            <ThreadPage />
+          </DashboardLayout>
+        }
+      />
+    </Route>
+
     <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
       <Route
         path="/admin"
         element={
           <DashboardLayout title="Admin Overview" subtitle="Platform-wide health and impact">
             <AdminOverviewPage />
+          </DashboardLayout>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <DashboardLayout title="Analytics" subtitle="Learning impact, retention and exports">
+            <AdminAnalyticsPage />
+          </DashboardLayout>
+        }
+      />
+      <Route
+        path="/admin/moderation"
+        element={
+          <DashboardLayout title="Moderation" subtitle="Review reports and see who did what">
+            <AdminModerationPage />
           </DashboardLayout>
         }
       />

@@ -5,7 +5,7 @@ const ContactPage = () => {
   return (
     <div className="mx-auto max-w-4xl space-y-10 px-4 py-12">
       <div className="text-center">
-        <h1 className="section-heading">Contact the  Bright ICT Hub team</h1>
+        <h1 className="section-heading">Contact the Ethio Tech Hub team</h1>
         <p className="section-subheading mx-auto">
           Share partnership inquiries, volunteer interest, or press requests and we will respond within two business
           days.

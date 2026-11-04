@@ -11,7 +11,7 @@ const Footer = () => (
   <footer className="border-t border-white/40 bg-white/80 backdrop-blur-3xl">
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 md:flex-row md:items-center md:justify-between">
       <div>
-        <p className="text-lg font-display font-semibold text-primary"> Bright ICT Hub</p>
+        <p className="text-lg font-display font-semibold text-primary">Ethio Tech Hub</p>
         <p className="text-sm text-stone-500">
           Practical ICT services and modern technical training for teams, institutions, and learners.
         </p>
@@ -23,7 +23,7 @@ const Footer = () => (
           </Link>
         ))}
       </nav>
-      <p className="text-xs text-stone-400">© {new Date().getFullYear()}  Bright ICT Hub. All rights reserved.</p>
+      <p className="text-xs text-stone-400">© {new Date().getFullYear()} Ethio Tech Hub. All rights reserved.</p>
     </div>
   </footer>
 );

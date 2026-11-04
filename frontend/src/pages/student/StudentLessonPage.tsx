@@ -4,7 +4,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { fetchCourse } from '../../services/courseService';
-import { fetchCourseProgress, updateProgress } from '../../services/progressService';
+import { fetchCourseProgress, updateProgressWithReward } from '../../services/progressService';
 import type { Course, Lesson, Progress } from '../../types';
 
 const StudentLessonPage = () => {
@@ -17,6 +17,7 @@ const StudentLessonPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [markingComplete, setMarkingComplete] = useState(false);
+  const [rewardNote, setRewardNote] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -59,12 +60,16 @@ const StudentLessonPage = () => {
     if (!courseId || !lessonId || !currentLesson) return;
     try {
       setMarkingComplete(true);
-      await updateProgress({
-        courseId,
+      const { reward, courseProgress } = await updateProgressWithReward({
         lessonId,
         status: 'completed',
         percentage: 100,
       });
+      const parts: string[] = [];
+      if (reward.xpAwarded > 0) parts.push(`+${reward.xpAwarded} XP`);
+      reward.newBadges.forEach((b) => parts.push(`${b.emoji} New badge: ${b.label}`));
+      if (courseProgress.completed) parts.push('🎓 Course completed!');
+      setRewardNote(parts.length ? parts.join(' · ') : null);
       // Reload progress
       const progressData = await fetchCourseProgress(courseId);
       setProgress(progressData);
@@ -296,6 +301,11 @@ const StudentLessonPage = () => {
             >
               {markingComplete ? 'Marking...' : isCompleted ? '✓ Completed' : 'Mark as Complete'}
             </Button>
+            {rewardNote && (
+              <span role="status" className="self-center text-sm font-semibold text-primary">
+                {rewardNote}
+              </span>
+            )}
             <Button
               variant="secondary"
               onClick={() => {

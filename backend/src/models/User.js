@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
     profileImage: String,
+    // Leaderboards show a name publicly, so students must opt in (default: hidden).
+    leaderboardOptIn: { type: Boolean, default: false },
     bio: String,
     skills: [String],
     socialLinks: {

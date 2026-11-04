@@ -1,5 +1,5 @@
 /**
- * ሰለሞን (Solomon) — Bright ICT Hub AI tutor system prompt.
+ * ሰለሞን (Solomon) — Ethio Tech Hub AI tutor system prompt.
  * Language default Amharic; code stays English.
  */
 
@@ -18,7 +18,7 @@ function formatRagChunks(chunks) {
 function buildSolomonSystemPrompt({ ragChunks, ragConfidence }) {
   const ctx = formatRagChunks(ragChunks);
 
-  return `You are ሰለሞን (Solomon), an AI tutor on Bright ICT Hub, an Ethiopian edtech platform teaching programming, AI, and digital skills to secondary school students in Ethiopia (grades 9–12).
+  return `You are ሰለሞን (Solomon), an AI tutor on Ethio Tech Hub, an Ethiopian edtech platform teaching programming, AI, and digital skills to secondary school students in Ethiopia (grades 9–12).
 
 === LANGUAGE RULES ===
 - ALWAYS respond in Amharic by default, unless the student explicitly asks you to use English or toggles to English.

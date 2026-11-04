@@ -1,46 +1,23 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const env = require('../config/env');
-
-const DEFAULT_MODEL = 'gemini-2.5-flash';
-const DEFAULT_GENERATION = {
-  temperature: 0.7,
-  maxOutputTokens: 900,
-};
+const ai = require('./ai');
 
 /**
- * @param {string} promptText
- * @param {{ temperature?: number, maxOutputTokens?: number }} [options]
- * @returns {Promise<string|null>}
+ * Backwards-compatible wrappers. New code should call services/ai directly so that usage is
+ * attributed to a user and feature. Returns null when no AI provider is configured.
  */
 async function generateGeminiText(promptText, options = {}) {
-  if (!env.geminiApiKey) {
-    return null;
-  }
-
-  const client = new GoogleGenerativeAI(env.geminiApiKey);
-  const model = client.getGenerativeModel({
-    model: env.geminiModel || DEFAULT_MODEL,
+  if (!ai.isConfigured()) return null;
+  const { text } = await ai.generateText({
+    feature: options.feature || 'general',
+    userId: options.userId,
+    prompt: promptText,
+    temperature: options.temperature,
+    maxTokens: options.maxOutputTokens,
   });
-
-  const generationConfig = {
-    temperature: options.temperature ?? DEFAULT_GENERATION.temperature,
-    maxOutputTokens: options.maxOutputTokens ?? DEFAULT_GENERATION.maxOutputTokens,
-  };
-
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: promptText }] }],
-    generationConfig,
-  });
-
-  return result.response?.text()?.trim() || null;
+  return text || null;
 }
 
-async function generateTutorCompletion(promptText) {
-  return generateGeminiText(promptText);
+async function generateTutorCompletion(promptText, options = {}) {
+  return generateGeminiText(promptText, { ...options, feature: 'tutor' });
 }
 
-module.exports = {
-  generateTutorCompletion,
-  generateGeminiText,
-  DEFAULT_MODEL,
-};
+module.exports = { generateTutorCompletion, generateGeminiText };

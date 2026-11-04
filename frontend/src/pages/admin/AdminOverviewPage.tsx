@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
+import { Link } from 'react-router-dom';
 import { fetchDashboardStats } from '../../services/adminService';
 
 const AdminOverviewPage = () => {
@@ -58,9 +58,11 @@ const AdminOverviewPage = () => {
       <Card className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase text-primary">Reports</p>
-          <p className="text-xl font-display">Monthly performance digest</p>
+          <p className="text-xl font-display">Impact analytics and CSV exports</p>
         </div>
-        <Button>Download PDF</Button>
+        <Link to="/admin/analytics" className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm">
+          Open analytics
+        </Link>
       </Card>
     </div>
   );

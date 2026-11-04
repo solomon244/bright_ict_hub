@@ -36,7 +36,7 @@ const queueEmail = async ({ to, subject, html }) => {
     });
 
     await transporter.sendMail({
-      from: ` Bright ICT Hub <${env.email.user}>`,
+      from: `Ethio Tech Hub <${env.email.user}>`,
       to,
       subject,
       html,

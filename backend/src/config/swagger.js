@@ -5,11 +5,11 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: ' Bright ICT Hub API',
+      title: 'Ethio Tech Hub API',
       version: '1.0.0',
-      description: 'Complete API documentation for  Bright ICT Hub EdTech Platform',
+      description: 'Complete API documentation for Ethio Tech Hub EdTech Platform',
       contact: {
-        name: ' Bright ICT Hub Support',
+        name: 'Ethio Tech Hub Support',
         email: 'support@ethiotechhub.com',
       },
       license: {

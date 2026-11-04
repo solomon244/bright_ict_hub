@@ -1,8 +1,8 @@
-const env = require('../config/env');
 const ApiResponse = require('../utils/apiResponse');
 const { buildSolomonGeminiPrompt } = require('../utils/tutorPrompt');
-const { generateTutorCompletion } = require('./tutorGeminiService');
-const { retrieveKnowledge } = require('./ragService');
+const ai = require('./ai');
+const conversations = require('./tutorConversationService');
+const { retrieveContext } = require('./ragService');
 const { checkEscalationTriggers } = require('./tutorSafetyService');
 const TutorEscalation = require('../models/TutorEscalation');
 const TutorConfusionCounter = require('../models/TutorConfusionCounter');
@@ -83,15 +83,58 @@ async function maybeEscalateRepeatedConfusion({ studentId, userText }) {
   });
 }
 
-exports.chat = async ({ studentId, messages }) => {
-  const msgs = trimMessages(messages);
-  const last = msgs[msgs.length - 1];
+const MAX_USER_MESSAGE_CHARS = 2000;
+
+/** Persist a tutor reply that did not come from the AI model (safety / escalation) and build the response. */
+async function localReply({ conversation, studentId, reply, escalate, reason, confidence }) {
+  const saved = await conversations.appendMessage({
+    conversation,
+    userId: studentId,
+    role: 'assistant',
+    content: reply,
+    aiGenerated: false,
+    meta: { escalated: escalate, reason, confidence },
+  });
+  return new ApiResponse(200, 'OK', {
+    reply,
+    escalate,
+    reason,
+    confidence,
+    aiGenerated: false,
+    conversationId: String(conversation._id),
+    messageId: String(saved._id),
+    mode: conversation.mode,
+  });
+}
+
+/**
+ * Chat with Solomon. History is always loaded from the database for the given conversation
+ * (the client only supplies the newest user message), so clients cannot rewrite the tutor's context.
+ */
+exports.chat = async ({ studentId, messages, conversationId, mode }) => {
+  const clientMessages = trimMessages(messages);
+  const last = clientMessages[clientMessages.length - 1];
 
   if (!last || last.role !== 'user') {
     return new ApiResponse(400, 'ከተማሪው የመጨረሻው መልዕክት user መሆን አለበት።');
   }
 
-  const userText = last.content;
+  const userText = last.content.slice(0, MAX_USER_MESSAGE_CHARS);
+
+  let conversation;
+  if (conversationId) {
+    conversation = await conversations.getOwnedConversation(studentId, conversationId);
+    if (conversation.messageCount >= conversations.MAX_MESSAGES_PER_CONVERSATION) {
+      return new ApiResponse(400, 'This chat is full — please start a new conversation. / ይህ ውይይት ሞልቷል፤ አዲስ ይጀምሩ።');
+    }
+    if (mode && mode !== conversation.mode) {
+      conversation.mode = mode;
+    }
+  } else {
+    conversation = await conversations.startConversation({ userId: studentId, firstUserText: userText, mode });
+  }
+
+  await conversations.appendMessage({ conversation, userId: studentId, role: 'user', content: userText });
 
   const safety = checkEscalationTriggers(userText);
   if (safety.escalate) {
@@ -103,7 +146,9 @@ exports.chat = async ({ studentId, messages }) => {
       confidence: 0,
       meta: { channel: 'tutor_safety' },
     });
-    return new ApiResponse(200, 'OK', {
+    return localReply({
+      conversation,
+      studentId,
       reply: safety.studentMessage,
       escalate: true,
       reason: safety.reason,
@@ -114,43 +159,61 @@ exports.chat = async ({ studentId, messages }) => {
   if (isConfusionSignal(userText)) {
     const repeated = await maybeEscalateRepeatedConfusion({ studentId, userText });
     if (repeated) {
-      return repeated;
+      return localReply({
+        conversation,
+        studentId,
+        reply: repeated.data.reply,
+        escalate: true,
+        reason: 'repeated_confusion',
+        confidence: null,
+      });
     }
   }
 
-  const { chunks, confidence } = retrieveKnowledge(userText);
-
-  if (!env.geminiApiKey) {
-    return new ApiResponse(
-      503,
-      'AI አስተማሪ በዚህ አገልግሎት ላይ እስኪያዋቅር ድረስ አይገኝም። (GEMINI_API_KEY)'
-    );
+  if (!ai.isConfigured()) {
+    return new ApiResponse(503, 'AI አስተማሪ በዚህ አገልግሎት ላይ እስኪያዋቅር ድረስ አይገኝም። (AI provider not configured)');
   }
 
+  const { chunks, confidence } = await retrieveContext(userText, { studentId });
+  const history = await conversations.recentHistory(conversation._id, MAX_TUTOR_HISTORY);
   const prompt = buildSolomonGeminiPrompt({
-    messages: msgs,
+    messages: history,
     ragChunks: chunks,
     ragConfidence: confidence,
+    mode: conversation.mode,
   });
 
   let replyText;
   try {
-    replyText = await generateTutorCompletion(prompt);
+    ({ text: replyText } = await ai.generateText({ feature: 'tutor', userId: studentId, prompt }));
   } catch (err) {
-    return new ApiResponse(502, err.message || 'AI አገልግሎት አልተሳካም።');
+    return new ApiResponse(err.statusCode || 502, err.message || 'AI አገልግሎት አልተሳካም።');
   }
 
-  if (!replyText) {
-    return new ApiResponse(502, 'ከ AI ባዶ ምላሽ ተመለሰ።');
-  }
-
-  const partialThreshold = getRagPartialThreshold();
+  const reason = confidence < getRagPartialThreshold() ? 'low_confidence_partial' : null;
+  // One hint per lesson; only real platform lessons carry a courseId, so the UI can link to them.
+  const seenLessons = new Set();
+  const lessonHints = chunks
+    .filter((c) => !seenLessons.has(String(c.lessonId)) && seenLessons.add(String(c.lessonId)))
+    .map((c) => ({ lessonId: String(c.lessonId), title: c.title, ...(c.courseId ? { courseId: String(c.courseId) } : {}) }));
+  const saved = await conversations.appendMessage({
+    conversation,
+    userId: studentId,
+    role: 'assistant',
+    content: replyText,
+    aiGenerated: true,
+    meta: { escalated: false, reason: reason || undefined, confidence, lessonHints },
+  });
 
   return new ApiResponse(200, 'OK', {
     reply: replyText,
     escalate: false,
-    reason: confidence < partialThreshold ? 'low_confidence_partial' : null,
+    reason,
     confidence,
-    lessonHints: chunks.map((c) => ({ lessonId: c.lessonId, title: c.title })),
+    lessonHints,
+    aiGenerated: true,
+    conversationId: String(conversation._id),
+    messageId: String(saved._id),
+    mode: conversation.mode,
   });
 };

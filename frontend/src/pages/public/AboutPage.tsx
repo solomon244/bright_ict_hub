@@ -5,7 +5,7 @@ const AboutPage = () => (
     <header className="space-y-4 text-center">
       <h1 className="section-heading">Rooted in Ethiopia, built for the world</h1>
       <p className="section-subheading mx-auto">
-         Bright ICT Hub partners with schools, regional innovation labs, and diaspora engineers to co-design
+ Ethio Tech Hub partners with schools, regional innovation labs, and diaspora engineers to co-design
         pathways that unlock the next generation of technologists.
       </p>
     </header>

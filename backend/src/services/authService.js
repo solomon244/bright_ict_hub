@@ -10,7 +10,7 @@ const {
 } = require('../utils/token');
 const env = require('../config/env');
 const emailService = require('./emailService');
-const { USER_ROLES } = require('../constants/roles');
+const { USER_ROLES, SELF_REGISTER_ROLES } = require('../constants/roles');
 
 const buildUserPayload = (user) => ({
   sub: user._id.toString(),
@@ -34,8 +34,9 @@ const generateAndStoreRefreshToken = async (user) => {
 };
 
 const register = async (payload) => {
-  const { email, role } = payload;
-  if (role && !Object.values(USER_ROLES).includes(role)) {
+  const { email, role, firstName, lastName, password } = payload;
+  // Defence in depth (the validator also checks this): public sign-up can never mint an admin.
+  if (role && !SELF_REGISTER_ROLES.includes(role)) {
     throw new AppError('Invalid role selection', 400);
   }
 
@@ -44,13 +45,21 @@ const register = async (payload) => {
     throw new AppError('Email already registered', 400);
   }
 
-  const user = await User.create(payload);
+  // Explicit allow-list: never pass req.body straight to the model (blocks mass assignment of
+  // isEmailVerified, instructorProfile.status, etc.).
+  const user = await User.create({
+    firstName,
+    lastName,
+    email,
+    password,
+    role: role || USER_ROLES.STUDENT,
+  });
 
   // Send welcome email (non-blocking - won't fail registration if email fails)
   emailService.queueEmail({
     to: user.email,
-    subject: 'Welcome to  Bright ICT Hub',
-    html: `<p>Selam ${user.firstName}, welcome to  Bright ICT Hub!</p>`,
+    subject: 'Welcome to Ethio Tech Hub',
+    html: `<p>Selam ${user.firstName}, welcome to Ethio Tech Hub!</p>`,
   }).catch((error) => {
     // Email failure is logged but doesn't affect registration
     console.error('Failed to send welcome email:', error.message);
@@ -159,7 +168,7 @@ const requestPasswordReset = async (email) => {
   // Send password reset email (non-blocking)
   emailService.queueEmail({
     to: user.email,
-    subject: 'Reset your  Bright ICT Hub password',
+    subject: 'Reset your Ethio Tech Hub password',
     html: `<p>Use this code to reset your password: <strong>${resetToken}</strong></p>`,
   }).catch((error) => {
     console.error('Failed to send password reset email:', error.message);
@@ -208,7 +217,7 @@ const requestEmailVerification = async (userId) => {
   // Send verification email (non-blocking)
   emailService.queueEmail({
     to: user.email,
-    subject: 'Verify your  Bright ICT Hub email',
+    subject: 'Verify your Ethio Tech Hub email',
     html: `<p>Here is your verification code: <strong>${token}</strong></p>`,
   }).catch((error) => {
     console.error('Failed to send verification email:', error.message);

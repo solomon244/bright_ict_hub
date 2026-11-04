@@ -55,7 +55,7 @@ const Navbar = () => {
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             BI
           </span>
-           Bright ICT Hub
+ Ethio Tech Hub
         </Link>
         <nav className="hidden gap-8 md:flex">
           {routes.map((route) => (
