@@ -18,6 +18,12 @@ const env = {
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || crypto.randomBytes(48).toString('hex'),
   jwtSecretsConfigured: Boolean(process.env.JWT_SECRET && process.env.JWT_REFRESH_SECRET),
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  // Every allowed frontend origin (CLIENT_URL may be comma-separated). Trailing slashes and quotes are stripped
+  // because browsers send origins without them, so "https://x.vercel.app/" would otherwise never match.
+  clientUrls: (process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, ''))
+    .filter(Boolean),
   email: {
     host: process.env.EMAIL_HOST || 'smtp.example.com',
     port: Number(process.env.EMAIL_PORT) || 587,
@@ -66,7 +72,7 @@ if (env.nodeEnv === 'production') {
     errors.push('❌ CRITICAL: MONGO_URI must be set in production!');
   }
 
-  if (env.clientUrl === 'http://localhost:5173') {
+  if (env.clientUrls.length === 1 && env.clientUrls[0] === 'http://localhost:5173') {
     errors.push('⚠️  WARNING: CLIENT_URL is still set to localhost. Update for production!');
   }
 

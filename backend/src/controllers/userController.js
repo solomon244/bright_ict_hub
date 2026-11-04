@@ -70,7 +70,7 @@ exports.uploadProfileImage = [
     }
 
     // Update user with new profile image URL
-    const fileUrl = `${env.clientUrl}/uploads/profiles/${req.file.filename}`;
+    const fileUrl = `${env.clientUrls[0]}/uploads/profiles/${req.file.filename}`;
     user.profileImage = fileUrl;
     await user.save();
 

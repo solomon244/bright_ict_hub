@@ -11,7 +11,7 @@ exports.uploadProfileImage = asyncHandler(async (req, res) => {
   }
 
   const fileUrl = `/uploads/profiles/${req.file.filename}`;
-  const fullUrl = `${env.clientUrl}${fileUrl}`;
+  const fullUrl = `${env.clientUrls[0]}${fileUrl}`;
 
   res.status(200).json(
     new ApiResponse(200, 'Profile image uploaded successfully', {
@@ -34,7 +34,7 @@ exports.uploadThumbnail = asyncHandler(async (req, res) => {
   }
 
   const fileUrl = `/uploads/thumbnails/${req.file.filename}`;
-  const fullUrl = `${env.clientUrl}${fileUrl}`;
+  const fullUrl = `${env.clientUrls[0]}${fileUrl}`;
 
   res.status(200).json(
     new ApiResponse(200, 'Thumbnail uploaded successfully', {
@@ -57,7 +57,7 @@ exports.uploadVideo = asyncHandler(async (req, res) => {
   }
 
   const fileUrl = `/uploads/videos/${req.file.filename}`;
-  const fullUrl = `${env.clientUrl}${fileUrl}`;
+  const fullUrl = `${env.clientUrls[0]}${fileUrl}`;
 
   res.status(200).json(
     new ApiResponse(200, 'Video uploaded successfully', {
@@ -80,7 +80,7 @@ exports.uploadResource = asyncHandler(async (req, res) => {
   }
 
   const fileUrl = `/uploads/resources/${req.file.filename}`;
-  const fullUrl = `${env.clientUrl}${fileUrl}`;
+  const fullUrl = `${env.clientUrls[0]}${fileUrl}`;
 
   // Determine file type from extension
   const ext = path.extname(req.file.filename).toLowerCase().slice(1);

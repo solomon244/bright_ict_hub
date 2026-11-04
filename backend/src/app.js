@@ -18,35 +18,38 @@ if (env.nodeEnv === 'production') {
   app.set('trust proxy', 1);
 }
 
-// CORS configuration - allow both local development and production origins
-// Supports comma-separated CLIENT_URL values for multiple frontends.
-const allowedOrigins = (env.clientUrl || '')
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
-// Always include localhost for local dev
+// CORS configuration - allow both local development and production origins.
+// CLIENT_URL may hold several comma-separated frontends (see config/env.js, which also strips trailing slashes).
+const allowedOrigins = [...env.clientUrls];
 if (!allowedOrigins.includes('http://localhost:5173')) {
   allowedOrigins.push('http://localhost:5173');
 }
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like server-to-server, health checks, Postman)
-      if (!origin) {
-        return callback(null, true);
-      }
-      
-      // Check if origin is in allowed list
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  })
-);
+// Optional: allow Vercel preview deployments, e.g. CORS_ALLOW_VERCEL_PREVIEWS=true
+// Only enable this if you accept any *.vercel.app site calling your API.
+const allowVercelPreviews = process.env.CORS_ALLOW_VERCEL_PREVIEWS === 'true';
+
+const isOriginAllowed = (origin) =>
+  allowedOrigins.includes(origin) ||
+  (allowVercelPreviews && /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin));
+
+const corsOptions = {
+  // Server-to-server calls, health checks and Postman send no Origin header and are allowed.
+  // For a disallowed origin we simply omit the CORS headers (the browser blocks it) instead of
+  // throwing, so the failure is a clean response rather than a 500 from the error handler.
+  origin: (origin, callback) => {
+    if (!origin || isOriginAllowed(origin)) return callback(null, true);
+    console.warn(`CORS: blocked origin ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 // Security headers. Swagger UI needs inline scripts/styles, so CSP is applied only when docs are off.
 // CORP is cross-origin because the frontend (another origin) embeds uploaded images and videos.
 app.use(
